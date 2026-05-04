@@ -1,0 +1,364 @@
+{
+  "name": "ChatIA",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        48,
+        -32
+      ],
+      "id": "88a0ee4a-bcda-430c-9d4c-9bd94615bc3d",
+      "name": "When chat message received",
+      "webhookId": "f6fdf8c3-1665-4c70-b636-ca8d86ad0abf"
+    },
+    {
+      "parameters": {
+        "model": "gemma3:4b",
+        "options": {}
+      },
+      "id": "73ca28d6-e617-4566-b84a-26c27e8ad240",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "position": [
+        224,
+        144
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "ollamaApi": {
+          "id": "RweTd9UfBusep8Xk",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Chat with local LLMs using n8n and Ollama\nThis n8n workflow allows you to seamlessly interact with your self-hosted Large Language Models (LLMs) through a user-friendly chat interface. By connecting to Ollama, a powerful tool for managing local LLMs, you can send prompts and receive AI-generated responses directly within n8n.\n\n### How it works\n1. When chat message received: Captures the user's input from the chat interface.\n2. Chat LLM Chain: Sends the input to the Ollama server and receives the AI-generated response.\n3. Delivers the LLM's response back to the chat interface.\n\n### Set up steps\n* Make sure Ollama is installed and running on your machine before executing this workflow.\n* Edit the Ollama address if different from the default.\n",
+        "height": 473,
+        "width": 485
+      },
+      "id": "9394d261-e301-4d47-823a-333f9989f5dc",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        32,
+        -560
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Ollama setup\n* Connect to your local Ollama, usually on http://localhost:11434\n* If running in Docker, make sure that the n8n container has access to the host's network in order to connect to Ollama. You can do this by passing `--net=host` option when starting the n8n Docker container",
+        "height": 258,
+        "width": 368,
+        "color": 6
+      },
+      "id": "91ca5a33-5907-435f-928c-74461af58dbb",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        720,
+        144
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Tu es un conseiller automobile professionnel.\n\nTon rôle est d’analyser les messages clients et de structurer les données pour automatiser le traitement des demandes (devis, rendez-vous, diagnostic).\n\n---\n\n🧠 CONTEXTE IMPORTANT\n\nTu reçois des messages qui peuvent faire partie d’une conversation déjà commencée.\n\nTu dois TOUJOURS conserver les informations déjà connues :\n- marque (brand)\n- modèle (model)\n- intention (intent)\n\n⚠️ Ne jamais réinitialiser une conversation si ces informations sont déjà connues.\n\n---\n\n🎯 OBJECTIFS\n\nPour chaque message :\n\n1. Identifier la marque et le modèle (si présents ou déjà connus)\n2. Identifier l’intention :\n   - devis\n   - diagnostic\n   - rdv\n   - autre\n\n3. Détecter un email dans le message utilisateur\n4. Déterminer la prochaine action métier\n\n---\n\n📌 RÈGLE DE VALIDATION\n\nUne demande est valide uniquement si :\n- une marque est détectée (ou déjà connue)\n- un modèle est détecté (ou déjà connu)\n\nSinon :\n- valid = false\n\n---\n\n📧 GESTION EMAIL\n\n- Si aucun email n’est présent dans le message :\n  → email_missing = true\n  → email_client = \"\"\n  → action = \"ask_email\"\n\n- Si un email est présent :\n  → email_missing = false\n  → email_client = email détecté\n  → action = \"send_email\"\n\n⚠️ Ne jamais inventer un email.\n\n---\n\n🧭 LOGIQUE MÉTIER\n\n❌ CAS 1 : demande invalide\n- valid = false\n- action = \"ignore\"\n- reply_client demande les informations manquantes\n\n🟡 CAS 2 : demande valide MAIS email manquant\n- valid = true\n- email_missing = true\n- action = \"ask_email\"\n- reply_client demande l’adresse email de manière commerciale\n\n🟢 CAS 3 : demande valide + email présent\n- valid = true\n- email_missing = false\n- action = \"send_email\"\n- reply_client confirme la prise en charge de la demande\n\n---\n\n💡 RÈGLE DE CONTINUITÉ (TRÈS IMPORTANT)\n\nSi le message utilisateur contient uniquement un email :\n- cela signifie qu’il répond à une demande précédente\n- tu dois utiliser la marque et le modèle déjà connus\n- ne pas redemander les informations déjà fournies\n- continuer le processus de devis\n\n---\n\n🚫 RÈGLES IMPORTANTES\n\n- Ne jamais changer de marque ou de modèle sans nouvelle information explicite\n- Ne jamais réinitialiser la conversation\n- Ne jamais inventer de véhicule\n- Ne jamais inventer d’email\n- Ne jamais proposer une autre voiture\n\n---\n\n💬 TON\n\n- professionnel\n- commercial\n- clair\n- orienté conversion\n\n---\n\n⚙️ FORMAT DE SORTIE (STRICT JSON UNIQUEMENT)\n\nAucun texte hors JSON\nAucun markdown\nAucun commentaire\n\n---\n\n📦 STRUCTURE OBLIGATOIRE\n\n{\n  \"valid\": true,\n  \"brand\": \"string|null\",\n  \"model\": \"string|null\",\n  \"intent\": \"devis|diagnostic|rdv|autre|null\",\n\n  \"email_missing\": true,\n  \"email_client\": \"\",\n\n  \"action\": \"ask_email|send_email|ignore\",\n\n  \"reply_client\": \"message à envoyer au client\"\n}"
+            }
+          ]
+        }
+      },
+      "id": "3f3e8cef-accd-4f6e-a7d7-e4afcc0d8844",
+      "name": "Chat LLM Chain",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [
+        224,
+        -32
+      ],
+      "typeVersion": 1.4
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a4108eb5-f2c6-44ac-95a3-082f8ae4cdfd",
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "sendMessage",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        -32
+      ],
+      "id": "b207fa15-1776-4258-b822-80c359bf9a8b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.text || $json.response || $json;\n\nconst cleaned = typeof raw === \"string\"\n  ? JSON.parse(raw.replace(/```json|```/g, '').trim())\n  : raw;\n\nreturn [{ json: cleaned }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        -32
+      ],
+      "id": "33b01640-18d4-40f4-9e90-ca7af11584cf",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $json.email_client }}",
+        "toEmail": "=test@gmail.com",
+        "subject": "=Votre demande de devis pour {{$json.brand}} {{$json.model}} - prise en charge",
+        "emailFormat": "text",
+        "text": "=Bonjour,\n\nNous avons bien reçu votre demande de devis pour une {{$json.brand}} {{$json.model}}.\n\nUn conseiller automobile va vous recontacter rapidement afin de vous proposer une offre personnalisée adaptée à vos besoins.\n\nSi vous souhaitez accélérer le traitement, vous pouvez déjà nous préciser vos préférences (finition, motorisation, options).\n\nCordialement,  \nL’équipe commerciale",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1200,
+        -80
+      ],
+      "id": "772f1f1a-57c0-4a38-8794-215d99f5fc7a",
+      "name": "Send an Email",
+      "webhookId": "d0d27644-7ff7-45aa-a2be-a0196215ceb2",
+      "credentials": {
+        "smtp": {
+          "id": "Ra57NGzOX5lqoS5G",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "l.bernard1@myskolae.fr",
+        "toEmail": "test@gmail.com",
+        "subject": "=Nouvelle demande de devis - {{$json.brand}} {{$json.model}}",
+        "emailFormat": "text",
+        "text": "=Bonjour,\n\nUne nouvelle demande de devis a été reçue.\n\nDétails :\n- Marque : {{$json.brand}}\n- Modèle : {{$json.model}}\n- Intention : {{$json.intent}}\n\nLe client doit être contacté rapidement.\n\nMerci de prendre en charge le dossier dès que possible.\n\nAutomatiquement généré par le système.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1200,
+        48
+      ],
+      "id": "19385189-ac05-4add-a1d3-7e059a7cdf96",
+      "name": "Send an Email1",
+      "webhookId": "9d7a1210-277d-4c3c-8074-5ba1f4b21171",
+      "credentials": {
+        "smtp": {
+          "id": "Ra57NGzOX5lqoS5G",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "ask_email",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ea9a6e31-c176-4c0b-80d5-363fdc4c47af"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "6df17a8e-ad55-42eb-b3df-00dbd9062151",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "send_email",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        912,
+        -80
+      ],
+      "id": "24f6435f-6da6-4fce-99bf-a6cdc96c81d5",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.reply_client }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1.3,
+      "position": [
+        1216,
+        -272
+      ],
+      "id": "0893cfb4-3de1-4d7f-92fa-6f0d9ef6fb4d",
+      "name": "Chat",
+      "webhookId": "aa9304f5-8b0d-4af9-a76f-f42221842a1f"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Chat LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Chat LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an Email1": {
+      "main": [
+        []
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Chat",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send an Email1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "27a69676-d7a1-489e-a893-bc59ce1508e1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e990a03027152a680a247413d38b42816c42c5c3ebef8238c42d4b51b135a5b0"
+  },
+  "id": "UU7ADd7vFDdqPvj9",
+  "tags": []
+}
